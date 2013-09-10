@@ -8,10 +8,7 @@ import com.jolbox.bonecp.BoneCP;
 import com.jolbox.bonecp.BoneCPConfig;
 import javassist.*;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.sql.Connection;
@@ -21,6 +18,9 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
 
 /**
  * Created by IntelliJ IDEA.
@@ -341,12 +341,18 @@ public final class Database {
         if(dir == null || !dir.isDirectory()){
             throw new DBParsingException(dir+" should be a directory in order to create database file");
         }
-        for(final CtClass tableClasses : getTableAccessory().getClassMeta()){
-            try {
-                tableClasses.writeFile(dir.getCanonicalPath());
-            } catch (final Exception e) {
-                throw new DBParsingException(e);
+
+        try{
+            final JarOutputStream writer = new JarOutputStream(new FileOutputStream(new File(dir, catalog+".jar")));
+            for(final CtClass tableClasses : getTableAccessory().getClassMeta()){
+                final JarEntry entry = new JarEntry(tableClasses.getName().replace('.','\\')+".class");
+                writer.putNextEntry(entry);
+                writer.flush();
+                writer.closeEntry();
             }
+            writer.close();
+        } catch(final Exception ex){
+            throw new DBParsingException(ex);
         }
     }
 
@@ -389,7 +395,7 @@ public final class Database {
             }
         }
         System.out.println("here");
-        db.writeDatabaseFile(new File("/home/gang-liu/temp"));
+        db.writeDatabaseFile(new File("/Users/develop/Java/temp"));
     }
 
 
